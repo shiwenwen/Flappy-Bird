@@ -172,7 +172,7 @@
 				TargetAttributes = {
 					88C800A11CA7C5CB009E4CF4 = {
 						CreatedOnToolsVersion = 7.3;
-						DevelopmentTeam = 3M7F2G5993;
+						DevelopmentTeam = JEHZ3ESUU9;
 					};
 				};
 			};
@@ -391,6 +391,7 @@
 				88C800BA1CA7C5CD009E4CF4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

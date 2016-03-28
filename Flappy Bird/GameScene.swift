@@ -11,9 +11,8 @@ enum 图层:CGFloat {
     case 背景
     case 障碍物
     case 前景
-    
     case 游戏角色
-    
+    case UI层
 }
 enum  游戏状态{
     case 主菜单
@@ -39,11 +38,14 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
     let k缺口系数:CGFloat = 3.5
     let k首次生成障碍延迟:NSTimeInterval = 1.75
     let k每次再生障碍延迟:NSTimeInterval = 1.5
-    
+    let k顶部留白:CGFloat = 20
+    let k标签字体 = "HelveticaNeue-CondensedBlack"
+    var 得分标签:SKLabelNode!
+    var 当前分数 = 0
     var 撞击了地面 = false
     var 撞击了障碍物 = false
     var 当前的游戏状态:游戏状态 = .游戏
-    
+    var 当前障碍物的标签 = 0
     
     var  速度 = CGPointZero
     
@@ -77,6 +79,7 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
             设置背景()
             设置前景()
             设置主角()
+            设置得分标签()
             无限重生障碍()
           }
     func 设置背景(){
@@ -115,12 +118,23 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
         
         
     }
+    func 设置得分标签(){
+        
+        得分标签 = SKLabelNode(fontNamed:k标签字体)
+        得分标签.fontColor = SKColor(red: 101.0/255.0, green: 71/255.0, blue: 73/255.0, alpha: 1)
+        得分标签.position = CGPoint(x: size.width / 2, y: size.height - k顶部留白)
+        得分标签.verticalAlignmentMode = .Top //顶部对齐
+        得分标签.text = "0"
+        得分标签.zPosition = 图层.UI层.rawValue
+        世界单位.addChild(得分标签)
+        
+    }
     //:###游戏流程
     func 创建障碍物(图片:String) -> SKSpriteNode {
         
         let 障碍物 = SKSpriteNode(imageNamed: 图片)
         障碍物.zPosition = 图层.障碍物.rawValue
-        
+        障碍物.userData = NSMutableDictionary()
         let offsetX = 障碍物.size.width * 障碍物.anchorPoint.x
         let offsetY = 障碍物.size.height * 障碍物.anchorPoint.y
         let path = CGPathCreateMutable()
@@ -151,19 +165,33 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
         let Y最大坐标:CGFloat = (游戏区域起始点 - 底部障碍.size.height / 2 + 游戏区域的高度 * k底部障碍最大乘数)
      
         底部障碍.position = CGPointMake(起始x坐标, CGFloat.random(min: Y最小坐标, max: Y最大坐标))
+        
+ 
+        
         let 顶部障碍 = 创建障碍物("CactusTop")
         世界单位.addChild(底部障碍)
-        顶部障碍.zRotation = CGFloat(180).degreesToRadians()
-   
-    
+//        顶部障碍.zRotation = CGFloat(180).degreesToRadians()
         
+
         顶部障碍.position = CGPointMake(起始x坐标, 底部障碍.position.y + 底部障碍.size.height / 2 + 顶部障碍.size.height / 2 + 主角.size.height * k缺口系数)
+        
         世界单位.addChild(顶部障碍)
+        let 上标签:SKLabelNode = SKLabelNode(fontNamed: "Chalkduster")
+        上标签.text = "\(当前障碍物的标签)"
+        上标签.verticalAlignmentMode = .Center
+        上标签.zPosition = 图层.UI层.rawValue
+        上标签.fontColor = SKColor(red: 101.0/255.0, green: 71/255.0, blue: 73/255.0, alpha: 1)
+        print("\(顶部障碍.position)")
+        
+        上标签.position = CGPoint(x: 0, y: -(顶部障碍.position.y - size.height + 顶部障碍.size.height / 2) / 2)
+        顶部障碍.addChild(上标签)
+
         
         let X皱移动距离 = -(size.width + 底部障碍.size.width)
         let 移动的持续时间 = X皱移动距离 / k前景移动速度
         
         let 移动的动作队列 = SKAction.sequence([
+            
             SKAction.moveByX(X皱移动距离, y: 0, duration: NSTimeInterval(移动的持续时间)),
             SKAction.removeFromParent()
                 
@@ -175,6 +203,7 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
         底部障碍.name = "底部障碍"
         顶部障碍.runAction(移动的动作队列)
         底部障碍.runAction(移动的动作队列)
+        当前障碍物的标签++
         
     }
     func 无限重生障碍() {
@@ -299,6 +328,31 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
 
         }
    }
+    func 更新得分(){
+        世界单位.enumerateChildNodesWithName("顶部障碍") { (匹配单位, _) -> Void in
+            
+            if let 障碍物 = 匹配单位 as?SKSpriteNode{
+                
+                if let 已通过 = 障碍物.userData?["已通过"] as?NSNumber{
+                    if 已通过.boolValue{
+                        
+                        return //已通过
+                    }
+                    
+                }
+                if self.主角.position.x > 障碍物.position.x + 障碍物.size.width / 2 + self.主角.size.width / 2{
+                    
+                    self.当前分数++
+                    self.得分标签.text = "\(self.当前分数)"
+                    self.runAction(self.得分的音效)
+                    障碍物.userData?["已通过"] = NSNumber(bool: true)
+                }
+                
+            }
+            
+        }
+        
+    }
     
     //MARK:游戏状态
     func 切换到跌落状态() {
@@ -328,7 +382,7 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
                 
           runAction(砰的音效) 
         let 新的游戏场景 = GameScene.init(size: size)
-        let 切换特效 = SKTransition.fadeWithColor(SKColor.blackColor(), duration: 0.05)
+        let 切换特效 = SKTransition.fadeWithColor(SKColor.blackColor(), duration: 0.025)
         view?.presentScene(新的游戏场景, transition: 切换特效)
         
     }
@@ -413,6 +467,7 @@ class GameScene: SKScene ,SKPhysicsContactDelegate{
               更新主角()
               撞击障碍物检查()
               撞击地面检查()
+              更新得分()
             break
         case .跌落:
             更新主角()
