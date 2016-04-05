@@ -22,9 +22,9 @@ class GameViewController: UIViewController {
                 
                 let scene = GameScene(size:CGSize(width: 320, height: 320*scale))//创建场景
                 
-                skView.showsFPS = true
+//                skView.showsFPS = true
                 skView.showsNodeCount = true //节点数量
-                skView.showsPhysics = true //物理模型
+//                skView.showsPhysics = true //物理模型
                 skView.ignoresSiblingOrder = true //忽略元素添加顺序
                 
                 scene.scaleMode = .AspectFill //缩放
